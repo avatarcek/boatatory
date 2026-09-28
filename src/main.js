@@ -1,0 +1,562 @@
+import { createClient } from "@supabase/supabase-js";
+import QRCode from "qrcode";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const app = document.querySelector("#app");
+
+const style = `
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:#07111f;
+  color:#eaf2ff;
+}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+a{color:inherit}
+.container{max-width:1100px;margin:auto;padding:24px}
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:16px;
+  padding:18px 24px;
+  border-bottom:1px solid #1d3047;
+  background:#081523;
+  position:sticky;
+  top:0;
+  z-index:10;
+}
+.logo{font-size:24px;font-weight:800;letter-spacing:-.5px}
+.logo span{color:#46b8ff}
+.card{
+  background:#0d1b2c;
+  border:1px solid #20364f;
+  border-radius:18px;
+  padding:22px;
+  margin-bottom:18px;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+}
+.grid3{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+}
+label{
+  display:block;
+  font-size:13px;
+  color:#91a8c2;
+  margin-bottom:6px;
+}
+input,select,textarea{
+  width:100%;
+  background:#081523;
+  border:1px solid #29435e;
+  color:#fff;
+  border-radius:10px;
+  padding:12px;
+  outline:none;
+}
+input:focus,select:focus,textarea:focus{border-color:#46b8ff}
+textarea{min-height:100px;resize:vertical}
+.btn{
+  border:0;
+  border-radius:10px;
+  padding:11px 16px;
+  font-weight:700;
+  background:#1597e5;
+  color:white;
+}
+.btn:hover{filter:brightness(1.1)}
+.btn.secondary{
+  background:#162a40;
+  border:1px solid #29435e;
+}
+.btn.danger{background:#b83a3a}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+h1{font-size:34px;margin:0 0 8px}
+h2{margin-top:0}
+.muted{color:#91a8c2}
+.small{font-size:13px}
+.hero{
+  padding:55px 24px;
+  text-align:center;
+  max-width:850px;
+  margin:auto;
+}
+.hero h1{font-size:48px}
+.badge{
+  display:inline-block;
+  padding:5px 9px;
+  border-radius:99px;
+  background:#102e43;
+  color:#64c8ff;
+  font-size:12px;
+  font-weight:700;
+}
+.stat{
+  padding:18px;
+  border:1px solid #20364f;
+  border-radius:14px;
+  background:#0a1726;
+}
+.stat strong{font-size:25px;display:block;margin-top:5px}
+.record{
+  border:1px solid #20364f;
+  border-radius:14px;
+  padding:16px;
+  margin-top:12px;
+  background:#0a1726;
+}
+.record-head{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+}
+.error{
+  background:#3a1717;
+  border:1px solid #7d3434;
+  color:#ffb0b0;
+  padding:12px;
+  border-radius:10px;
+  margin:12px 0;
+}
+.success{
+  background:#123421;
+  border:1px solid #285f3c;
+  color:#a7efbd;
+  padding:12px;
+  border-radius:10px;
+  margin:12px 0;
+}
+.empty{
+  text-align:center;
+  padding:35px 15px;
+  color:#91a8c2;
+}
+.qr{
+  background:white;
+  padding:12px;
+  border-radius:12px;
+  width:190px;
+  height:190px;
+}
+hr{border:0;border-top:1px solid #20364f;margin:24px 0}
+@media(max-width:700px){
+  .grid,.grid3{grid-template-columns:1fr}
+  .hero h1{font-size:36px}
+  .topbar{padding:15px}
+  .container{padding:15px}
+}
+`;
+
+document.head.insertAdjacentHTML("beforeend", `<style>${style}</style>`);
+
+function escapeHtml(value = "") {
+  return String(value)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+function formatDate(value) {
+  if (!value) return "—";
+  return new Date(value).toLocaleDateString("sl-SI");
+}
+
+function money(value) {
+  if (value === null || value === undefined || value === "") return "—";
+  return `${Number(value).toLocaleString("sl-SI")} €`;
+}
+
+function showError(message) {
+  const el = document.querySelector("#message");
+  if (el) el.innerHTML = `<div class="error">${escapeHtml(message)}</div>`;
+}
+
+function showSuccess(message) {
+  const el = document.querySelector("#message");
+  if (el) el.innerHTML = `<div class="success">${escapeHtml(message)}</div>`;
+}
+
+async function getUser() {
+  const { data } = await supabase.auth.getUser();
+  return data?.user || null;
+}
+
+async function ensureProfile(user) {
+  if (!user) return;
+
+  const { data } = await supabase
+    .from("profiles")
+    .select("id,full_name,role")
+    .eq("id",user.id)
+    .maybeSingle();
+
+  if (!data) {
+    await supabase.from("profiles").insert({
+      id:user.id,
+      full_name:user.user_metadata?.full_name || ""
+    });
+  }
+}
+
+function authScreen() {
+  app.innerHTML = `
+    <div class="hero">
+      <div class="badge">BOATPROOF · PHASE 1</div>
+      <h1>Know your boat.<br><span style="color:#46b8ff">Keep its history.</span></h1>
+      <p class="muted">
+        A permanent digital identity and service history for your vessel.
+      </p>
+
+      <div class="card" style="text-align:left;max-width:460px;margin:30px auto">
+        <div id="message"></div>
+
+        <div id="login-form">
+          <h2>Sign in</h2>
+
+          <div style="margin-bottom:12px">
+            <label>Email</label>
+            <input id="email" type="email" placeholder="you@example.com">
+          </div>
+
+          <div style="margin-bottom:12px">
+            <label>Password</label>
+            <input id="password" type="password" placeholder="••••••••">
+          </div>
+
+          <div class="actions">
+            <button class="btn" id="login">Sign in</button>
+            <button class="btn secondary" id="show-register">Create account</button>
+          </div>
+        </div>
+
+        <div id="register-form" style="display:none">
+          <h2>Create account</h2>
+
+          <div style="margin-bottom:12px">
+            <label>Name</label>
+            <input id="name" type="text" placeholder="Your name">
+          </div>
+
+          <div style="margin-bottom:12px">
+            <label>Email</label>
+            <input id="reg-email" type="email" placeholder="you@example.com">
+          </div>
+
+          <div style="margin-bottom:12px">
+            <label>Password</label>
+            <input id="reg-password" type="password" placeholder="Minimum 6 characters">
+          </div>
+
+          <div class="actions">
+            <button class="btn" id="register">Create account</button>
+            <button class="btn secondary" id="show-login">Back</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.querySelector("#show-register").onclick = () => {
+    document.querySelector("#login-form").style.display="none";
+    document.querySelector("#register-form").style.display="block";
+  };
+
+  document.querySelector("#show-login").onclick = () => {
+    document.querySelector("#register-form").style.display="none";
+    document.querySelector("#login-form").style.display="block";
+  };
+
+  document.querySelector("#login").onclick = async () => {
+    const email=document.querySelector("#email").value.trim();
+    const password=document.querySelector("#password").value;
+
+    if(!email || !password){
+      showError("Vpiši email in geslo.");
+      return;
+    }
+
+    const {error}=await supabase.auth.signInWithPassword({
+      email,password
+    });
+
+    if(error){
+      showError(error.message);
+      return;
+    }
+
+    await router();
+  };
+
+  document.querySelector("#register").onclick = async () => {
+    const name=document.querySelector("#name").value.trim();
+    const email=document.querySelector("#reg-email").value.trim();
+    const password=document.querySelector("#reg-password").value;
+
+    if(!email || !password){
+      showError("Email in geslo sta obvezna.");
+      return;
+    }
+
+    if(password.length < 6){
+      showError("Geslo mora imeti vsaj 6 znakov.");
+      return;
+    }
+
+    const {data,error}=await supabase.auth.signUp({
+      email,
+      password,
+      options:{
+        data:{full_name:name}
+      }
+    });
+
+    if(error){
+      showError(error.message);
+      return;
+    }
+
+    if(data.session){
+      await router();
+    }else{
+      showSuccess("Račun ustvarjen. Preveri email, če Supabase zahteva potrditev.");
+    }
+  };
+}
+
+async function dashboard(user) {
+  const {data:vessels,error}=await supabase
+    .from("vessels")
+    .select("*")
+    .eq("owner_id",user.id)
+    .order("created_at",{ascending:false});
+
+  if(error){
+    app.innerHTML=`<div class="container"><div class="error">${escapeHtml(error.message)}</div></div>`;
+    return;
+  }
+
+  app.innerHTML=`
+    <header class="topbar">
+      <div class="logo">Boat<span>Proof</span></div>
+      <button class="btn secondary" id="logout">Sign out</button>
+    </header>
+
+    <main class="container">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;margin-bottom:20px">
+        <div>
+          <div class="badge">OWNER DASHBOARD</div>
+          <h1 style="margin-top:8px">Your vessels</h1>
+          <div class="muted">${escapeHtml(user.email || "")}</div>
+        </div>
+        <button class="btn" id="new-vessel">+ Add vessel</button>
+      </div>
+
+      <div id="message"></div>
+
+      ${
+        vessels?.length
+        ? vessels.map(v=>`
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;gap:15px;align-items:flex-start">
+              <div>
+                <span class="badge">${escapeHtml(v.public_id)}</span>
+                <h2 style="margin:10px 0 4px">${escapeHtml(v.name)}</h2>
+                <div class="muted">
+                  ${escapeHtml([v.make,v.model].filter(Boolean).join(" ") || "Vessel")}
+                  ${v.year ? ` · ${v.year}` : ""}
+                </div>
+              </div>
+              <div class="stat">
+                <span class="muted small">Engine hours</span>
+                <strong>${v.engine_hours ?? "—"}</strong>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button class="btn" data-open="${v.id}">Open vessel</button>
+              <a class="btn secondary" href="/v/${encodeURIComponent(v.public_id)}">
+                Public page
+              </a>
+            </div>
+          </div>
+        `).join("")
+        : `
+          <div class="card empty">
+            <h2>No vessel yet</h2>
+            <p>Create your first vessel profile to start its permanent history.</p>
+            <button class="btn" id="empty-add">+ Add first vessel</button>
+          </div>
+        `
+      }
+    </main>
+  `;
+
+  document.querySelector("#logout").onclick=async()=>{
+    await supabase.auth.signOut();
+    await router();
+  };
+
+  document.querySelector("#new-vessel")?.addEventListener("click",()=>vesselForm());
+  document.querySelector("#empty-add")?.addEventListener("click",()=>vesselForm());
+
+  document.querySelectorAll("[data-open]").forEach(btn=>{
+    btn.onclick=()=>vesselDetail(btn.dataset.open);
+  });
+}
+
+function vesselForm(existing=null) {
+  app.innerHTML=`
+    <header class="topbar">
+      <div class="logo">Boat<span>Proof</span></div>
+      <button class="btn secondary" id="back">Back</button>
+    </header>
+
+    <main class="container">
+      <div class="card">
+        <div class="badge">${existing ? "EDIT VESSEL" : "NEW VESSEL"}</div>
+        <h1>${existing ? "Edit vessel" : "Create your vessel"}</h1>
+        <p class="muted">The Vessel ID is generated automatically and remains permanent.</p>
+
+        <div id="message"></div>
+
+        <form id="vessel-form">
+          <div class="grid">
+            <div>
+              <label>Vessel name *</label>
+              <input id="name" required value="${escapeHtml(existing?.name||"")}">
+            </div>
+            <div>
+              <label>Make</label>
+              <input id="make" value="${escapeHtml(existing?.make||"")}">
+            </div>
+            <div>
+              <label>Model</label>
+              <input id="model" value="${escapeHtml(existing?.model||"")}">
+            </div>
+            <div>
+              <label>Year</label>
+              <input id="year" type="number" value="${existing?.year||""}">
+            </div>
+            <div>
+              <label>Country</label>
+              <input id="country" value="${escapeHtml(existing?.country||"")}">
+            </div>
+            <div>
+              <label>HIN</label>
+              <input id="hin" value="${escapeHtml(existing?.hin||"")}">
+            </div>
+            <div>
+              <label>Engine</label>
+              <input id="engine" value="${escapeHtml(existing?.engine||"")}">
+            </div>
+            <div>
+              <label>Engine hours</label>
+              <input id="engine_hours" type="number" step="0.1" value="${existing?.engine_hours||""}">
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn" type="submit">
+              ${existing ? "Save changes" : "Create vessel"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </main>
+  `;
+
+  document.querySelector("#back").onclick=async()=>{
+    const user=await getUser();
+    dashboard(user);
+  };
+
+  document.querySelector("#vessel-form").onsubmit=async(e)=>{
+    e.preventDefault();
+
+    const user=await getUser();
+
+    const payload={
+      name:document.querySelector("#name").value.trim(),
+      make:document.querySelector("#make").value.trim() || null,
+      model:document.querySelector("#model").value.trim() || null,
+      year:Number(document.querySelector("#year").value) || null,
+      country:document.querySelector("#country").value.trim() || null,
+      hin:document.querySelector("#hin").value.trim() || null,
+      engine:document.querySelector("#engine").value.trim() || null,
+      engine_hours:Number(document.querySelector("#engine_hours").value) || null
+    };
+
+    if(!payload.name){
+      showError("Vessel name je obvezen.");
+      return;
+    }
+
+    let result;
+
+    if(existing){
+      result=await supabase
+        .from("vessels")
+        .update({...payload,updated_at:new Date().toISOString()})
+        .eq("id",existing.id)
+        .select()
+        .single();
+    }else{
+      result=await supabase
+        .from("vessels")
+        .insert({...payload,owner_id:user.id})
+        .select()
+        .single();
+    }
+
+    if(result.error){
+      showError(result.error.message);
+      return;
+    }
+
+    await vesselDetail(result.data.id);
+  };
+}
+
+async function vesselDetail(vesselId) {
+  const user=await getUser();
+
+  const {data:vessel,error}=await supabase
+    .from("vessels")
+    .select("*")
+    .eq("id",vesselId)
+    .single();
+
+  if(error){
+    app.innerHTML=`<div class="container"><div class="error">${escapeHtml(error.message)}</div></div>`;
+    return;
+  }
+
+  const {data:records}=await supabase
+    .from("vessel_records")
+    .select("*")
+    .eq("vessel_id",vesselId)
+    .order("record_date",{ascending:false})
+    .order("created_at",{ascending:false});
+
+  const publicUrl=`${location.origin}/v/${vessel.public_id}`;
+
+  app.innerHTML=`
+    <header class="topbar">
+      <div class="logo">Boat<span>Proof</span></div>
+      <div class="actions" style="margin:0">
+        <button class="btn secondary" id="back">Dashboard</button>
+        <button class="btn secondary" id="edit">
