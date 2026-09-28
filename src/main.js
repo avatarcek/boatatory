@@ -560,3 +560,368 @@ async function vesselDetail(vesselId) {
       <div class="actions" style="margin:0">
         <button class="btn secondary" id="back">Dashboard</button>
         <button class="btn secondary" id="edit">
+                </div>
+      </header>
+
+      <main class="container">
+        <div class="card">
+          <div class="badge">${escapeHtml(vessel.public_id)}</div>
+          <h1 style="margin-top:10px">${escapeHtml(vessel.name)}</h1>
+          <p class="muted">
+            ${escapeHtml([vessel.make,vessel.model].filter(Boolean).join(" ") || "Vessel")}
+            ${vessel.year ? ` · ${vessel.year}` : ""}
+          </p>
+
+          <div class="grid3" style="margin-top:20px">
+            <div class="stat">
+              <span class="muted small">HIN</span>
+              <strong style="font-size:16px">${escapeHtml(vessel.hin||"—")}</strong>
+            </div>
+
+            <div class="stat">
+              <span class="muted small">Engine</span>
+              <strong style="font-size:16px">${escapeHtml(vessel.engine||"—")}</strong>
+            </div>
+
+            <div class="stat">
+              <span class="muted small">Engine hours</span>
+              <strong>${vessel.engine_hours ?? "—"}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="card">
+            <h2>Public Vessel ID</h2>
+            <p class="muted small">
+              Share this link with a buyer, marina or service provider.
+            </p>
+
+            <input readonly value="${escapeHtml(publicUrl)}">
+
+            <div class="actions">
+              <button class="btn" id="copy-link">Copy public link</button>
+              <a class="btn secondary" href="/v/${encodeURIComponent(vessel.public_id)}">
+                Open public page
+              </a>
+            </div>
+
+            <canvas id="qr" class="qr" style="margin-top:18px"></canvas>
+          </div>
+
+          <div class="card">
+            <h2>Add history record</h2>
+
+            <form id="record-form">
+              <div style="margin-bottom:12px">
+                <label>Date</label>
+                <input id="record_date" type="date" value="${new Date().toISOString().slice(0,10)}">
+              </div>
+
+              <div style="margin-bottom:12px">
+                <label>Work / title *</label>
+                <input id="title" required placeholder="Polishing, engine service, antifouling...">
+              </div>
+
+              <div style="margin-bottom:12px">
+                <label>Category</label>
+                <select id="record_type">
+                  <option value="maintenance">Maintenance</option>
+                  <option value="polishing">Polishing</option>
+                  <option value="antifouling">Antifouling</option>
+                  <option value="engine">Engine</option>
+                  <option value="propeller">Propeller</option>
+                  <option value="repair">Repair</option>
+                  <option value="inspection">Inspection</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div class="grid">
+                <div>
+                  <label>Provider</label>
+                  <input id="provider_name" placeholder="Company / person">
+                </div>
+
+                <div>
+                  <label>Cost (€)</label>
+                  <input id="cost" type="number" step="0.01">
+                </div>
+              </div>
+
+              <div style="margin-top:12px">
+                <label>Engine hours</label>
+                <input id="record_engine_hours" type="number" step="0.1">
+              </div>
+
+              <div style="margin-top:12px">
+                <label>Notes</label>
+                <textarea id="notes" placeholder="What was done? Parts? Observations?"></textarea>
+              </div>
+
+              <div class="actions">
+                <button class="btn" type="submit">Save record</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>History</h2>
+
+          <div id="records">
+            ${
+              records?.length
+              ? records.map(r=>`
+                <div class="record">
+                  <div class="record-head">
+                    <div>
+                      <div class="badge">${escapeHtml(r.record_type||"maintenance")}</div>
+                      <h3 style="margin:9px 0 4px">${escapeHtml(r.title)}</h3>
+                      <div class="muted small">${formatDate(r.record_date)}</div>
+                    </div>
+
+                    <strong>${money(r.cost)}</strong>
+                  </div>
+
+                  <div class="grid3" style="margin-top:14px">
+                    <div>
+                      <div class="muted small">Provider</div>
+                      <div>${escapeHtml(r.provider_name||"—")}</div>
+                    </div>
+
+                    <div>
+                      <div class="muted small">Engine hours</div>
+                      <div>${r.engine_hours ?? "—"}</div>
+                    </div>
+
+                    <div>
+                      <div class="muted small">Status</div>
+                      <div>${escapeHtml(r.verification_status||"owner_entered")}</div>
+                    </div>
+                  </div>
+
+                  ${
+                    r.notes
+                    ? `<p class="muted" style="margin-bottom:0">${escapeHtml(r.notes)}</p>`
+                    : ""
+                  }
+                </div>
+              `).join("")
+              : `<div class="empty">No history records yet.</div>`
+            }
+          </div>
+        </div>
+      </main>
+    </div>
+  `;
+
+  QRCode.toCanvas(
+    document.querySelector("#qr"),
+    publicUrl,
+    {width:190,margin:1},
+    ()=>{}
+  );
+
+  document.querySelector("#back").onclick=()=>dashboard(user);
+
+  document.querySelector("#edit").onclick=()=>vesselForm(vessel);
+
+  document.querySelector("#copy-link").onclick=async()=>{
+    try{
+      await navigator.clipboard.writeText(publicUrl);
+      showSuccess("Public link copied.");
+    }catch{
+      showError("Copy ni uspel. Link je: "+publicUrl);
+    }
+  };
+
+  document.querySelector("#record-form").onsubmit=async(e)=>{
+    e.preventDefault();
+
+    const payload={
+      vessel_id:vesselId,
+      created_by:user.id,
+      record_type:document.querySelector("#record_type").value,
+      title:document.querySelector("#title").value.trim(),
+      record_date:document.querySelector("#record_date").value,
+      provider_name:document.querySelector("#provider_name").value.trim() || null,
+      cost:Number(document.querySelector("#cost").value) || null,
+      engine_hours:Number(document.querySelector("#record_engine_hours").value) || null,
+      notes:document.querySelector("#notes").value.trim() || null
+    };
+
+    if(!payload.title){
+      showError("Title / work je obvezen.");
+      return;
+    }
+
+    const {error}=await supabase
+      .from("vessel_records")
+      .insert(payload);
+
+    if(error){
+      showError(error.message);
+      return;
+    }
+
+    await vesselDetail(vesselId);
+  };
+}
+
+async function publicVessel(publicId) {
+  const {data:vessel,error}=await supabase
+    .from("vessels")
+    .select("id,public_id,name,make,model,year,country,engine,engine_hours,is_public")
+    .eq("public_id",publicId)
+    .eq("is_public",true)
+    .single();
+
+  if(error || !vessel){
+    app.innerHTML=`
+      <main class="container">
+        <div class="card empty">
+          <h1>Vessel not found</h1>
+          <p>The public Vessel ID is invalid or the vessel is private.</p>
+        </div>
+      </main>
+    `;
+    return;
+  }
+
+  const {data:records}=await supabase
+    .from("vessel_records")
+    .select("record_type,title,record_date,provider_name,cost,engine_hours,notes,verification_status")
+    .eq("vessel_id",vessel.id)
+    .eq("is_public",true)
+    .order("record_date",{ascending:false});
+
+  app.innerHTML=`
+    <header class="topbar">
+      <div class="logo">Boat<span>Proof</span></div>
+      <span class="badge">${escapeHtml(vessel.public_id)}</span>
+    </header>
+
+    <main class="container">
+      <div class="hero" style="padding-top:35px">
+        <div class="badge">PUBLIC VESSEL HISTORY</div>
+        <h1>${escapeHtml(vessel.name)}</h1>
+        <p class="muted">
+          ${escapeHtml([vessel.make,vessel.model].filter(Boolean).join(" ") || "Vessel")}
+          ${vessel.year ? ` · ${vessel.year}` : ""}
+        </p>
+      </div>
+
+      <div class="card">
+        <h2>Vessel information</h2>
+
+        <div class="grid3">
+          <div class="stat">
+            <span class="muted small">Vessel ID</span>
+            <strong style="font-size:16px">${escapeHtml(vessel.public_id)}</strong>
+          </div>
+
+          <div class="stat">
+            <span class="muted small">Country</span>
+            <strong style="font-size:16px">${escapeHtml(vessel.country||"—")}</strong>
+          </div>
+
+          <div class="stat">
+            <span class="muted small">Engine hours</span>
+            <strong>${vessel.engine_hours ?? "—"}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Service history</h2>
+
+        ${
+          records?.length
+          ? records.map(r=>`
+            <div class="record">
+              <div class="badge">${escapeHtml(r.record_type||"maintenance")}</div>
+              <h3 style="margin:9px 0 4px">${escapeHtml(r.title)}</h3>
+              <div class="muted small">${formatDate(r.record_date)}</div>
+
+              <div class="grid3" style="margin-top:14px">
+                <div>
+                  <div class="muted small">Provider</div>
+                  <div>${escapeHtml(r.provider_name||"—")}</div>
+                </div>
+
+                <div>
+                  <div class="muted small">Cost</div>
+                  <div>${money(r.cost)}</div>
+                </div>
+
+                <div>
+                  <div class="muted small">Engine hours</div>
+                  <div>${r.engine_hours ?? "—"}</div>
+                </div>
+              </div>
+
+              ${
+                r.notes
+                ? `<p class="muted">${escapeHtml(r.notes)}</p>`
+                : ""
+              }
+
+              <div class="small muted">
+                ${escapeHtml(r.verification_status||"owner_entered")}
+              </div>
+            </div>
+          `).join("")
+          : `<div class="empty">No public history records yet.</div>`
+        }
+      </div>
+
+      <div class="card" style="text-align:center">
+        <div class="badge">POWERED BY BOATPROOF</div>
+        <p class="muted">A permanent digital history for your vessel.</p>
+      </div>
+    </main>
+  `;
+}
+
+async function router() {
+  if(!SUPABASE_URL || !SUPABASE_KEY){
+    app.innerHTML=`
+      <main class="container">
+        <div class="card">
+          <h1>BoatProof configuration missing</h1>
+          <p class="muted">
+            Supabase environment variables are not configured in Vercel.
+          </p>
+          <p><strong>VITE_SUPABASE_URL</strong></p>
+          <p><strong>VITE_SUPABASE_PUBLISHABLE_KEY</strong></p>
+        </div>
+      </main>
+    `;
+    return;
+  }
+
+  const path=location.pathname;
+
+  if(path.startsWith("/v/")){
+    const publicId=decodeURIComponent(path.split("/v/")[1] || "");
+    await publicVessel(publicId);
+    return;
+  }
+
+  const user=await getUser();
+
+  if(!user){
+    authScreen();
+    return;
+  }
+
+  await ensureProfile(user);
+  await dashboard(user);
+}
+
+supabase.auth.onAuthStateChange(async()=>{
+  await router();
+});
+
+router();
