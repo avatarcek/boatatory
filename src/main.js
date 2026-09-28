@@ -699,6 +699,15 @@ async function vesselDetail(vesselId) {
                       <div class="muted small">Status</div>
                       <div>${escapeHtml(r.verification_status||"owner_entered")}</div>
                     </div>
+                    ${r.verification_status !== "provider_verified" ? `
+<button
+  class="btn"
+  type="button"
+  onclick="requestVerification('${r.id}')"
+>
+  Request verification
+</button>
+` : ""}
                   </div>
 
                   ${
@@ -1015,6 +1024,35 @@ async function verifyRecord(token){
 
     document.querySelector("#verify-form").style.display="none";
   });
+}
+async function requestVerification(recordId){
+  const {data:token,error}=await supabase.rpc(
+    "create_record_verification_request",
+    {
+      p_record_id:recordId
+    }
+  );
+
+  if(error){
+    alert(error.message);
+    return;
+  }
+
+  const verificationUrl=
+    `${location.origin}/verify/${encodeURIComponent(token)}`;
+
+  try{
+    await navigator.clipboard.writeText(verificationUrl);
+    alert(
+      "Verification link created and copied!\n\n" +
+      "Send this link to the service provider."
+    );
+  }catch{
+    prompt(
+      "Verification link — copy and send it to the service provider:",
+      verificationUrl
+    );
+  }
 }
 
 supabase.auth.onAuthStateChange(async()=>{
