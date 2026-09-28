@@ -929,11 +929,11 @@ if(path.startsWith("/verify/")){
   await dashboard(user);
 }
 async function verifyRecord(token){
-  const {data:record,error}=await supabase.rpc(
+  const {data,error}=await supabase.rpc(
     "get_record_verification",
     {p_token:token}
   );
-
+const record=Array.isArray(data) ? data[0] : data;
   if(error || !record){
     app.innerHTML=`
       <main style="max-width:700px;margin:60px auto;padding:24px">
