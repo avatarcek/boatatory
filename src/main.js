@@ -699,6 +699,10 @@ async function vesselDetail(vesselId) {
                       <div class="muted small">Status</div>
                       <div>${r.verification_status === "provider_verified" ? "✓ PROVIDER VERIFIED" : escapeHtml(r.verification_status || "owner_entered")}</div>
                     </div>
+                    ${r.verification_status === "provider_verified" && r.verified_provider_name ? `
+<div class="muted small" style="margin-top:12px">Verified by</div>
+<div>${escapeHtml(r.verified_provider_name)}</div>
+` : ""}
                     ${r.verification_status !== "provider_verified" ? `
 <button
   class="btn"
