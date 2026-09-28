@@ -901,15 +901,15 @@ async function router() {
     return;
   }
 
+
   const path=location.pathname;
+if(path.startsWith("/verify/")){
+  const token=decodeURIComponent(path.split("/verify/")[1] || "");
+  await verifyRecord(token);
+  return;
+}
 
-  if(path.startsWith("/v/")){
-    const publicId=decodeURIComponent(path.split("/v/")[1] || "");
-    await publicVessel(publicId);
-    return;
-  }
-
-  const user=await getUser();
+ const user=await getUser();
 
   if(!user){
     authScreen();
@@ -918,6 +918,103 @@ async function router() {
 
   await ensureProfile(user);
   await dashboard(user);
+}
+async function verifyRecord(token){
+  const {data:record,error}=await supabase.rpc(
+    "get_record_verification",
+    {p_token:token}
+  );
+
+  if(error || !record){
+    app.innerHTML=`
+      <main style="max-width:700px;margin:60px auto;padding:24px">
+        <h1>Verification link invalid</h1>
+        <p>This verification link is invalid, expired, or already used.</p>
+      </main>
+    `;
+    return;
+  }
+
+  app.innerHTML=`
+    <main style="max-width:700px;margin:40px auto;padding:24px">
+      <h1>Verify service record</h1>
+
+      <p style="opacity:.7">
+        Vessel: <strong>${record.vessel_name}</strong>
+      </p>
+
+      <div style="padding:20px;border:1px solid #334155;border-radius:14px;margin:20px 0">
+        <h2>${record.title || "Service record"}</h2>
+        <p><strong>Date:</strong> ${record.record_date || "-"}</p>
+        <p><strong>Provider entered by owner:</strong> ${record.provider_name || "-"}</p>
+        <p><strong>Engine hours:</strong> ${record.engine_hours ?? "-"}</p>
+        <p><strong>Cost:</strong> ${record.cost ?? "-"} €</p>
+        <p><strong>Notes:</strong> ${record.notes || "-"}</p>
+      </div>
+
+      <form id="verify-form">
+        <label>Provider / service company name</label>
+        <input
+          id="verify_provider_name"
+          required
+          placeholder="Your company or name"
+          style="width:100%;padding:12px;margin:8px 0 16px"
+        >
+
+        <label>Email (optional)</label>
+        <input
+          id="verify_provider_email"
+          type="email"
+          placeholder="email@example.com"
+          style="width:100%;padding:12px;margin:8px 0 20px"
+        >
+
+        <button class="btn" type="submit">
+          Confirm service record
+        </button>
+      </form>
+
+      <p id="verify-message" style="margin-top:20px"></p>
+    </main>
+  `;
+
+  document.querySelector("#verify-form").addEventListener("submit",async(e)=>{
+    e.preventDefault();
+
+    const providerName=
+      document.querySelector("#verify_provider_name").value.trim();
+
+    const providerEmail=
+      document.querySelector("#verify_provider_email").value.trim() || null;
+
+    const {error}=await supabase.rpc(
+      "confirm_record_verification",
+      {
+        p_token:token,
+        p_provider_name:providerName,
+        p_provider_email:providerEmail
+      }
+    );
+
+    const message=document.querySelector("#verify-message");
+
+    if(error){
+      message.textContent=error.message;
+      return;
+    }
+
+    message.innerHTML=`
+      <strong>✓ Provider verified</strong>
+      <br><br>
+      This service record has been successfully verified.
+      <br><br>
+      <a href="/v/${encodeURIComponent(record.vessel_public_id)}">
+        View public vessel history
+      </a>
+    `;
+
+    document.querySelector("#verify-form").style.display="none";
+  });
 }
 
 supabase.auth.onAuthStateChange(async()=>{
