@@ -35,3 +35,4 @@ Test with two real boat owners:
 7. Report every confusing field, error, or missing piece.
 
 The goal is a real owner being able to create a useful vessel history in a few minutes.
+Boatatory Phase 1
