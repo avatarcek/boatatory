@@ -551,7 +551,30 @@ async function vesselDetail(vesselId) {
     .eq("vessel_id",vesselId)
     .order("record_date",{ascending:false})
     .order("created_at",{ascending:false});
+const recordIds=(records||[]).map(r=>r.id);
 
+let evidenceFiles=[];
+
+if(recordIds.length){
+  const {data:files}=await supabase
+    .from("vessel_files")
+    .select("*")
+    .in("record_id",recordIds)
+    .order("created_at",{ascending:true});
+
+  evidenceFiles=await Promise.all(
+    (files||[]).map(async file=>{
+      const {data:signed}=await supabase.storage
+        .from("vessel-files")
+        .createSignedUrl(file.storage_path,3600);
+
+      return {
+        ...file,
+        signed_url:signed?.signedUrl || null
+      };
+    })
+  );
+}
   const publicUrl=`${location.origin}/v/${vessel.public_id}`;
 
   app.innerHTML=`
