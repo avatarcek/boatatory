@@ -1131,8 +1131,6 @@ async function requestVerification(recordId){
   }
 }
 window.requestVerification = requestVerification;
-supabase.auth.onAuthStateChange(async()=>{
-  await router();
-});
+
 
 router();
