@@ -757,7 +757,7 @@ return {
     }
   </div>
 ` : ""}
-                    ${r.verification_status === "owner_entered"" ? `
+                    ${r.verification_status === "owner_entered" ? `
 <button
   class="btn"
   type="button"
