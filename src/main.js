@@ -761,7 +761,39 @@ if(recordIds.length){
 ` : ""}
                   </div>
 
-                  ${
+                 ${
+  evidenceFiles.filter(f=>f.record_id===r.id).length
+  ? `
+    <div style="margin-top:16px;padding:16px;border:1px solid #20364f;border-radius:14px;background:#0a1726">
+      <div style="font-weight:800;margin-bottom:12px">Evidence</div>
+
+      ${evidenceFiles.filter(f=>f.record_id===r.id).map(f=>`
+        <div style="margin-bottom:12px">
+          ${
+            f.mime_type?.startsWith("image/") && f.signed_url
+            ? `
+              <a href="${escapeHtml(f.signed_url)}" target="_blank" rel="noopener">
+                <img
+                  src="${escapeHtml(f.signed_url)}"
+                  alt="${escapeHtml(f.file_name)}"
+                  style="width:100%;max-width:360px;border-radius:12px;border:1px solid #29435e;display:block"
+                >
+              </a>
+            `
+            : f.signed_url
+            ? `
+              <a class="btn secondary" href="${escapeHtml(f.signed_url)}" target="_blank" rel="noopener">
+                Open ${escapeHtml(f.file_name)}
+              </a>
+            `
+            : ""
+          }
+        </div>
+      `).join("")}
+    </div>
+  `
+  : ""
+} ${
                     r.notes
                     ? `<p class="muted" style="margin-bottom:0">${escapeHtml(r.notes)}</p>`
                     : ""
