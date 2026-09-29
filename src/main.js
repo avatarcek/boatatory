@@ -738,23 +738,26 @@ return {
                       <div>${r.engine_hours ?? "—"}</div>
                     </div>
 
-                    <div style="grid-column:1/-1;margin-top:4px;padding:18px;border:1px solid #24506b;border-radius:14px;background:linear-gradient(135deg,#0b2434,#0a1726)">
-  <div style="font-size:13px;font-weight:800;color:#67d5ff;letter-spacing:.4px">
-    ✓ PROVIDER VERIFIED
-  </div>
+                    ${r.verification_status === "provider_verified" ? `
+  <div style="grid-column:1/-1;margin-top:4px;padding:18px;border:1px solid #24506b;border-radius:14px;color:#67d5ff;letter-spacing:.4px">
+    <div style="font-size:13px;font-weight:800">
+      ✓ PROVIDER VERIFIED
+    </div>
 
-  ${
-    r.verified_provider_name
-    ? `
-      <div class="muted small" style="margin-top:12px">Verified by</div>
-      <div style="font-weight:700;margin-top:3px">
-        ${escapeHtml(r.verified_provider_name)}
-      </div>
-    `
-    : ""
-  }
-</div>
-                    ${r.verification_status !== "provider_verified" ? `
+    ${r.verified_provider_name
+      ? `
+        <div class="muted small" style="margin-top:12px">
+          Verified by
+        </div>
+        <div style="font-weight:700;margin-top:3px">
+          ${escapeHtml(r.verified_provider_name)}
+        </div>
+      `
+      : ""
+    }
+  </div>
+` : ""}
+                    ${r.verification_status === "owner_entered"" ? `
 <button
   class="btn"
   type="button"
