@@ -658,7 +658,23 @@ async function vesselDetail(vesselId) {
                 <label>Notes</label>
                 <textarea id="notes" placeholder="What was done? Parts? Observations?"></textarea>
               </div>
+<div style="margin-top:16px;padding:16px;border:1px solid #20364f;border-radius:14px;background:#0a1726">
+  <div style="font-weight:800;margin-bottom:5px">Evidence</div>
+  <div class="muted small" style="margin-bottom:12px">
+    Add photos or documents for this service record.
+  </div>
 
+  <input
+    id="record_files"
+    type="file"
+    multiple
+    accept="image/*,.pdf"
+  >
+
+  <div class="muted small" style="margin-top:8px">
+    Photos or PDF · max 10 files
+  </div>
+</div>
               <div class="actions">
                 <button class="btn" type="submit">Save record</button>
               </div>
@@ -758,36 +774,84 @@ async function vesselDetail(vesselId) {
   };
 
   document.querySelector("#record-form").onsubmit=async(e)=>{
-    e.preventDefault();
+  e.preventDefault();
 
-    const payload={
-      vessel_id:vesselId,
-      created_by:user.id,
-      record_type:document.querySelector("#record_type").value,
-      title:document.querySelector("#title").value.trim(),
-      record_date:document.querySelector("#record_date").value,
-      provider_name:document.querySelector("#provider_name").value.trim() || null,
-      cost:Number(document.querySelector("#cost").value) || null,
-      engine_hours:Number(document.querySelector("#record_engine_hours").value) || null,
-      notes:document.querySelector("#notes").value.trim() || null
-    };
-
-    if(!payload.title){
-      showError("Title / work je obvezen.");
-      return;
-    }
-
-    const {error}=await supabase
-      .from("vessel_records")
-      .insert(payload);
-
-    if(error){
-      showError(error.message);
-      return;
-    }
-
-    await vesselDetail(vesselId);
+  const payload={
+    vessel_id:vesselId,
+    created_by:user.id,
+    record_type:document.querySelector("#record_type").value,
+    title:document.querySelector("#title").value.trim(),
+    record_date:document.querySelector("#record_date").value,
+    provider_name:document.querySelector("#provider_name").value.trim(),
+    cost:Number(document.querySelector("#cost").value)||null,
+    engine_hours:Number(document.querySelector("#record_engine_hours").value)||null,
+    notes:document.querySelector("#notes").value.trim()
   };
+
+  if(!payload.title){
+    showError("Title / work je obvezen.");
+    return;
+  }
+
+  const files=Array.from(
+    document.querySelector("#record_files")?.files || []
+  );
+
+  if(files.length>10){
+    showError("Maximum 10 files.");
+    return;
+  }
+
+  const {data:record,error}=await supabase
+    .from("vessel_records")
+    .insert(payload)
+    .select("id")
+    .single();
+
+  if(error){
+    showError(error.message);
+    return;
+  }
+
+  for(let i=0;i<files.length;i++){
+    const file=files[i];
+
+    const safeName=file.name
+      .replace(/[^a-zA-Z0-9._-]/g,"_");
+
+    const storagePath=
+      `${vesselId}/${record.id}/${Date.now()}-${i}-${safeName}`;
+
+    const {error:uploadError}=await supabase.storage
+      .from("vessel-files")
+      .upload(storagePath,file);
+
+    if(uploadError){
+      showError("Record saved, but file upload failed: "+uploadError.message);
+      return;
+    }
+
+    const {error:fileError}=await supabase
+      .from("vessel_files")
+      .insert({
+        vessel_id:vesselId,
+        record_id:record.id,
+        uploaded_by:user.id,
+        storage_path:storagePath,
+        file_name:file.name,
+        mime_type:file.type || null,
+        file_size:file.size,
+        is_public:false
+      });
+
+    if(fileError){
+      showError("File uploaded, but evidence record failed: "+fileError.message);
+      return;
+    }
+  }
+
+  await vesselDetail(vesselId);
+};
 }
 
 async function publicVessel(publicId) {
