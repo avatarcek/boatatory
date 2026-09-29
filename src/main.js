@@ -564,14 +564,18 @@ if(recordIds.length){
 
   evidenceFiles=await Promise.all(
     (files||[]).map(async file=>{
-      const {data:signed}=await supabase.storage
-        .from("vessel-files")
-        .createSignedUrl(file.storage_path,3600);
+      const {data:signed,error:signedError}=await supabase.storage
+  .from("vessel-files")
+  .createSignedUrl(file.storage_path,3600);
 
-      return {
-        ...file,
-        signed_url:signed?.signedUrl || null
-      };
+if(signedError){
+  alert("Evidence error: "+signedError.message);
+}
+
+return {
+  ...file,
+  signed_url:signed?.signedUrl || null
+};
     })
   );
 }
