@@ -194,7 +194,16 @@ async function getUser() {
   const { data } = await supabase.auth.getUser();
   return data?.user || null;
 }
+async function trackEvent(eventName, metadata = {}) {
+  const user = await getUser();
+  if (!user) return;
 
+  await supabase.from("user_events").insert({
+    user_id: user.id,
+    event_name: eventName,
+    metadata
+  });
+}
 async function ensureProfile(user) {
   if (!user) return;
 
