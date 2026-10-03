@@ -448,20 +448,25 @@ async function adminDashboard(user){
     return;
   }
 
-  const [{data:users},{data:vessels},{data:records}]=await Promise.all([
-    supabase
-      .from("profiles")
-      .select("id,full_name,role,created_at")
-      .order("created_at",{ascending:false}),
-    supabase
-      .from("vessels")
-      .select("id,name,make,model,public_id,owner_id,created_at")
-      .order("created_at",{ascending:false}),
-    supabase
-      .from("vessel_records")
-      .select("id,vessel_id,title,record_date,provider_name,verification_status,created_at")
-      .order("created_at",{ascending:false})
-  ]);
+  const [{data:users},{data:vessels},{data:records},{data:events}]=await Promise.all([
+  supabase
+    .from("profiles")
+    .select("id,full_name,role,created_at")
+    .order("created_at",{ascending:false}),
+  supabase
+    .from("vessels")
+    .select("id,name,make,model,public_id,owner_id,created_at")
+    .order("created_at",{ascending:false}),
+  supabase
+    .from("vessel_records")
+    .select("id,vessel_id,title,record_date,provider_name,created_at")
+    .order("created_at",{ascending:false}),
+  supabase
+    .from("user_events")
+    .select("id,user_id,event_name,metadata,created_at")
+    .order("created_at",{ascending:false})
+    .limit(20)
+]);
 
   app.innerHTML=`
     <header class="topbar">
