@@ -781,7 +781,10 @@ return {
   evidenceFiles.filter(f=>f.record_id===r.id).length
   ? `
     <div style="margin-top:16px;padding:16px;border:1px solid #20364f;border-radius:14px;background:#0a1726">
-      <div style="font-weight:800;margin-bottom:12px">Evidence</div>
+      <div style="font-weight:800;margin-bottom:6px">Evidence</div>
+<div class="muted small" style="margin-bottom:14px">
+  Attached to this service record
+</div>
 
       ${evidenceFiles.filter(f=>f.record_id===r.id).map(f=>`
         <div style="margin-bottom:12px">
