@@ -1062,7 +1062,11 @@ async function router() {
 
 
   const path=location.pathname;
-if(path.startsWith("/verify/")){
+if(path.startsWith("/v/")){
+  const publicId=decodeURIComponent(path.split("/v/")[1] || "");
+  await publicVessel(publicId);
+  return;
+} if(path.startsWith("/verify/")){
   const token=decodeURIComponent(path.split("/verify/")[1] || "");
   await verifyRecord(token);
   return;
