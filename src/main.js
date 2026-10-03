@@ -421,7 +421,7 @@ async function dashboard(user) {
 function vesselForm(existing=null) {
   app.innerHTML=`
     <header class="topbar">
-      <div class="logo">Boat<span>Proof</span></div>
+      <div class="logo">Boat<span>atory</span></div>
       <button class="btn secondary" id="back">Back</button>
     </header>
 
@@ -583,7 +583,7 @@ return {
 
   app.innerHTML=`
     <header class="topbar">
-      <div class="logo">Boat<span>Proof</span></div>
+      <div class="logo">Boat<span>atory</span></div>
       <div class="actions" style="margin:0">
         <button class="btn secondary" id="back">Dashboard</button>
         <button class="btn secondary" id="edit">
