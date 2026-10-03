@@ -1039,7 +1039,7 @@ async function publicVessel(publicId) {
       </div>
 
       <div class="card" style="text-align:center">
-        <div class="badge">POWERED BY BOATPROOF</div>
+        <div class="badge">POWERED BY BOATATORY</div>
         <p class="muted">A permanent digital history for your vessel.</p>
       </div>
     </main>
@@ -1051,7 +1051,7 @@ async function router() {
     app.innerHTML=`
       <main class="container">
         <div class="card">
-          <h1>BoatProof configuration missing</h1>
+          <h1>Boatatory configuration missing</h1>
           <p class="muted">
             Supabase environment variables are not configured in Vercel.
           </p>
