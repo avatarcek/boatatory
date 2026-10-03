@@ -351,7 +351,7 @@ async function dashboard(user) {
 
   app.innerHTML=`
     <header class="topbar">
-      <div class="logo">Boat<span>Proof</span></div>
+      <div class="logo">Boat<span>atory</span></div>
       <button class="btn secondary" id="logout">Sign out</button>
     </header>
 
