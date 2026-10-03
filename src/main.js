@@ -418,7 +418,123 @@ async function dashboard(user) {
   });
 }
 
-function vesselForm(existing=null) {
+async function adminDashboard(user){
+  const {data:profile,error:profileError}=await supabase
+    .from("profiles")
+    .select("id,full_name,role")
+    .eq("id",user.id)
+    .single();
+
+  if(profileError || profile?.role!=="admin"){
+    app.innerHTML=`
+      <main class="container">
+        <div class="card">
+          <h1>Access denied</h1>
+          <p class="muted">Admin access required.</p>
+          <button class="btn" onclick="router()">Back</button>
+        </div>
+      </main>
+    `;
+    return;
+  }
+
+  const [{data:users},{data:vessels},{data:records}]=await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id,full_name,role,created_at")
+      .order("created_at",{ascending:false}),
+    supabase
+      .from("vessels")
+      .select("id,name,make,model,public_id,owner_id,created_at")
+      .order("created_at",{ascending:false}),
+    supabase
+      .from("vessel_records")
+      .select("id,vessel_id,title,record_date,provider_name,verification_status,created_at")
+      .order("created_at",{ascending:false})
+  ]);
+
+  app.innerHTML=`
+    <header class="topbar">
+      <div class="logo">Boat<span>atory</span></div>
+      <button class="btn secondary" id="admin-back">Dashboard</button>
+    </header>
+
+    <main class="container">
+      <div class="card">
+        <div class="badge">ADMIN</div>
+        <h1>Admin Dashboard</h1>
+        <p class="muted">Boatatory internal overview.</p>
+
+        <div class="grid" style="margin-top:20px">
+          <div class="card">
+            <h2>${users?.length || 0}</h2>
+            <p class="muted">Users</p>
+          </div>
+
+          <div class="card">
+            <h2>${vessels?.length || 0}</h2>
+            <p class="muted">Vessels</p>
+          </div>
+
+          <div class="card">
+            <h2>${records?.length || 0}</h2>
+            <p class="muted">Records</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Users</h2>
+
+        ${(users||[]).map(u=>`
+          <div style="padding:14px 0;border-bottom:1px solid #20364f">
+            <strong>${escapeHtml(u.full_name || "Unnamed user")}</strong>
+            <div class="muted small">${escapeHtml(u.role || "user")}</div>
+          </div>
+        `).join("")}
+      </div>
+
+      <div class="card">
+        <h2>Vessels</h2>
+
+        ${(vessels||[]).map(v=>`
+          <div style="padding:14px 0;border-bottom:1px solid #20364f">
+            <strong>${escapeHtml(v.name || "Unnamed vessel")}</strong>
+            <div class="muted small">
+              ${escapeHtml(v.make || "")} ${escapeHtml(v.model || "")}
+            </div>
+            <div class="muted small">
+              ID: ${escapeHtml(v.public_id || "-")}
+            </div>
+          </div>
+        `).join("")}
+      </div>
+
+      <div class="card">
+        <h2>Recent Records</h2>
+
+        ${(records||[]).slice(0,20).map(r=>`
+          <div style="padding:14px 0;border-bottom:1px solid #20364f">
+            <strong>${escapeHtml(r.title || "Untitled record")}</strong>
+            <div class="muted small">
+              ${escapeHtml(r.record_date || "-")}
+              · ${escapeHtml(r.provider_name || "No provider")}
+            </div>
+            <div class="small" style="margin-top:6px">
+              ${
+                r.verification_status === "provider_verified"
+                  ? "✓ PROVIDER VERIFIED"
+                  : "OWNER ENTERED"
+              }
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </main>
+  `;
+
+  document.querySelector("#admin-back").onclick=()=>dashboard(user);
+} function vesselForm(existing=null) {
   app.innerHTML=`
     <header class="topbar">
       <div class="logo">Boat<span>atory</span></div>
