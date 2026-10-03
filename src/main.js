@@ -215,7 +215,7 @@ async function ensureProfile(user) {
 function authScreen() {
   app.innerHTML = `
     <div class="hero">
-      <div class="badge">BOATPROOF · PHASE 1</div>
+      <div class="badge">BOATATORY · PHASE 1</div>
       <h1>Know your boat.<br><span style="color:#46b8ff">Keep its history.</span></h1>
       <p class="muted">
         A permanent digital identity and service history for your vessel.
@@ -957,7 +957,7 @@ async function publicVessel(publicId) {
 
   app.innerHTML=`
     <header class="topbar">
-      <div class="logo">Boat<span>Proof</span></div>
+      <div class="logo">Boat<span>atory</span></div>
       <span class="badge">${escapeHtml(vessel.public_id)}</span>
     </header>
 
