@@ -1058,7 +1058,13 @@ return {
       return;
     }
   }
-
+if(files.length > 0){
+  await trackEvent("evidence_uploaded", {
+    record_id: record.id,
+    vessel_id: vesselId,
+    file_count: files.length
+  });
+}
   await vesselDetail(vesselId);
 };
 }
