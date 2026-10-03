@@ -306,7 +306,7 @@ function authScreen() {
       showError(error.message);
       return;
     }
-
+await trackEvent("login");
     await router();
   };
 
