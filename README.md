@@ -1,4 +1,4 @@
-# BoatProof — Phase 1 MVP
+# Boatatory — Phase 1 MVP
 
 Phase 1 focuses on real-user testing, not feature creep.
 
