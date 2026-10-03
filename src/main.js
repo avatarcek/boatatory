@@ -1021,14 +1021,17 @@ async function publicVessel(publicId) {
               </div>
 
               ${
-                r.notes
-                ? `<p class="muted">${escapeHtml(r.notes)}</p>`
-                : ""
-              }
-
-              <div class="small muted">
-                ${escapeHtml(r.verification_status||"owner_entered")}
-              </div>
+  r.notes
+  ? `<p class="muted">${escapeHtml(r.notes)}</p>`
+  : ""
+}
+<div class="small" style="font-weight:800;color:#67d5ff;margin-top:10px">
+  ${
+    r.verification_status === "provider_verified"
+      ? "✓ PROVIDER VERIFIED"
+      : "OWNER ENTERED"
+  }
+</div>
             </div>
           `).join("")
           : `<div class="empty">No public history records yet.</div>`
