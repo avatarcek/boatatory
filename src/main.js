@@ -1199,7 +1199,18 @@ if(path.startsWith("/v/")){
   }
 
   await ensureProfile(user);
-  await dashboard(user);
+  const {data:profile}=await supabase
+  .from("profiles")
+  .select("role")
+  .eq("id",user.id)
+  .single();
+
+if(profile?.role==="admin"){
+  await adminDashboard(user);
+  return;
+}
+
+await dashboard(user);
 }
 async function verifyRecord(token){
   const {data,error}=await supabase.rpc(
