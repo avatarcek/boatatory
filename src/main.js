@@ -1018,7 +1018,11 @@ return {
     return;
   }
 
-  for(let i=0;i<files.length;i++){
+ await trackEvent("record_created", {
+  record_id: record.id,
+  vessel_id: vesselId
+}); 
+    for(let i=0;i<files.length;i++){
     const file=files[i];
 
     const safeName=file.name
