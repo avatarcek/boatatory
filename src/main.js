@@ -347,6 +347,7 @@ await trackEvent("login");
 }
 
 async function dashboard(user) {
+    await trackEvent("dashboard_view");
   const {data:vessels,error}=await supabase
     .from("vessels")
     .select("*")
