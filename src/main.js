@@ -758,6 +758,15 @@ return {
   </div>
 ` : ""}
                     ${r.verification_status === "owner_entered" ? `
+<div style="grid-column:1/-1;margin-top:4px;padding:18px;border:1px solid #334e68;border-radius:14px">
+  <div style="font-size:13px;font-weight:800;letter-spacing:.4px">
+    OWNER ENTERED
+  </div>
+  <div class="muted small" style="margin-top:8px">
+    This service record was entered by the vessel owner.
+  </div>
+</div>
+
 <button
   class="btn"
   type="button"
