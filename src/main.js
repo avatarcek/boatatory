@@ -626,7 +626,8 @@ async function adminDashboard(user){
     return;
   }
 
-  const [{data:users},{data:vessels},{data:records},{data:events}]=await Promise.all([
+ const [{data:users},{data:vessels},
+{data:records},{data:events},{data:feedback}]=await  Promise.all([
   supabase
     .from("profiles")
     .select("id,full_name,role,created_at")
@@ -723,7 +724,24 @@ async function adminDashboard(user){
           </div>
         `).join("")}
       </div>
-    </main>
+  <div class="card" style="margin-top:20px">
+  <h2>Feedback</h2>
+
+  ${
+    (feedback || []).slice(0,20).map(f => `
+      <div style="padding:14px 0;border-bottom:1px solid #20364f">
+        <div class="muted small">
+          ${escapeHtml(f.created_at || "-")}
+        </div>
+
+        <p style="margin:8px 0 0">
+          ${escapeHtml(f.message || "")}
+        </p>
+      </div>
+    `).join("")
+    || `<p class="muted">No feedback yet.</p>`
+  }
+</div>  </main>
   `;
 
   document.querySelector("#admin-back").onclick=()=>dashboard(user);
