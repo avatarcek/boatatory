@@ -686,7 +686,7 @@ supabase
         <h2>Users</h2>
 
         ${(users||[]).map(u=>`
-          <div style="padding:14px 0;border-bottom:1px solid #20364f">
+          <div class="admin-user-row" data-user-id="${escapeHtml(u.id)}" style="padding:14px 0;border-bottom:1px solid #20364f;cursor:pointer">
             <strong>${escapeHtml(u.full_name || "Unnamed user")}</strong>
             <div class="muted small">${escapeHtml(u.role || "user")}</div>
           </div>
@@ -750,6 +750,132 @@ supabase
   `;
 
   document.querySelector("#admin-back").onclick=()=>dashboard(user);
+async function adminUserDetail(adminUser,userId){
+  const {data:profile}=await supabase
+    .from("profiles")
+    .select("id,full_name,role,onboarding_reason,created_at")
+    .eq("id",userId)
+    .single();
+
+  const {data:vessels}=await supabase
+    .from("vessels")
+    .select("id,name,make,model,public_id,created_at")
+    .eq("owner_id",userId)
+    .order("created_at",{ascending:false});
+
+  const vesselIds=(vessels||[]).map(v=>v.id);
+
+  let records=[];
+
+  if(vesselIds.length){
+    const {data}=await supabase
+      .from("vessel_records")
+      .select("id,vessel_id,title,record_date,provider_name")
+      .in("vessel_id",vesselIds)
+      .order("record_date",{ascending:false})
+      .limit(50);
+
+    records=data||[];
+  }
+
+  const {data:feedback}=await supabase
+    .from("feedback")
+    .select("id,message,created_at")
+    .eq("user_id",userId)
+    .order("created_at",{ascending:false})
+    .limit(20);
+
+  app.innerHTML=`
+    <header class="topbar">
+      <div class="logo">Boat<span>atory</span></div>
+      <button class="btn secondary" id="user-detail-back">Back</button>
+    </header>
+
+    <main class="container">
+
+      <div class="card">
+        <div class="badge">USER DETAIL</div>
+        <h1>${escapeHtml(profile?.full_name || "Unnamed user")}</h1>
+
+        <p class="muted">
+          Joined ${escapeHtml(profile?.created_at || "-")}
+        </p>
+
+        <p>
+          <strong>Role:</strong>
+          ${escapeHtml(profile?.role || "user")}
+        </p>
+
+        <p>
+          <strong>Why are you here?</strong><br>
+          ${escapeHtml(profile?.onboarding_reason || "Not answered")}
+        </p>
+      </div>
+
+      <div class="card">
+        <h2>Vessels</h2>
+
+        ${
+          (vessels||[]).map(v=>`
+            <div style="padding:14px 0;border-bottom:1px solid #20364f">
+              <strong>${escapeHtml(v.name || "Unnamed vessel")}</strong>
+              <div class="muted small">
+                ${escapeHtml(v.make || "")}
+                ${escapeHtml(v.model || "")}
+              </div>
+              <div class="muted small">
+                ID: ${escapeHtml(v.public_id || "-")}
+              </div>
+            </div>
+          `).join("")
+          || `<p class="muted">No vessels yet.</p>`
+        }
+      </div>
+
+      <div class="card">
+        <h2>Records</h2>
+        <p class="muted">
+          ${records.length} record${records.length===1 ? "" : "s"}
+        </p>
+
+        ${
+          records.slice(0,20).map(r=>`
+            <div style="padding:14px 0;border-bottom:1px solid #20364f">
+              <strong>${escapeHtml(r.title || "Untitled")}</strong>
+              <div class="muted small">
+                ${escapeHtml(r.record_date || "-")}
+                ${r.provider_name ? " · " + escapeHtml(r.provider_name) : ""}
+              </div>
+            </div>
+          `).join("")
+          || `<p class="muted">No records yet.</p>`
+        }
+      </div>
+
+      <div class="card">
+        <h2>Feedback</h2>
+
+        ${
+          (feedback||[]).map(f=>`
+            <div style="padding:14px 0;border-bottom:1px solid #20364f">
+              <div class="muted small">
+                ${escapeHtml(f.created_at || "-")}
+              </div>
+              <p style="margin:8px 0 0">
+                ${escapeHtml(f.message || "")}
+              </p>
+            </div>
+          `).join("")
+          || `<p class="muted">No feedback yet.</p>`
+        }
+      </div>
+
+    </main>
+  `;
+
+  document.querySelector("#user-detail-back").onclick=()=>{
+    adminDashboard(adminUser);
+  };
 } function vesselForm(existing=null) {
   app.innerHTML=`
     <header class="topbar">
