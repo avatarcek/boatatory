@@ -892,6 +892,12 @@ async function adminUserDetail(adminUser,userId){
     .eq("user_id",userId)
     .order("created_at",{ascending:false})
     .limit(20);
+  const {data:interviews}=await supabase
+  .from("interview_feedback")
+  .select("id,what_trying_to_do,what_liked,what_confusing,what_improve,would_use,created_at")
+  .eq("user_id",userId)
+  .order("created_at",{ascending:false})
+  .limit(20);
 
   app.innerHTML=`
     <header class="topbar">
@@ -978,6 +984,42 @@ async function adminUserDetail(adminUser,userId){
         }
       </div>
 
+   <div class="card">
+  <h2>Interview</h2>
+
+  ${
+    (interviews||[]).map(i=>`
+      <div style="padding:14px 0;border-bottom:1px solid #20364f">
+
+        <div class="muted small">
+          ${escapeHtml(i.created_at || "-")}
+        </div>
+
+        <p><strong>What were you trying to do?</strong><br>
+          ${escapeHtml(i.what_trying_to_do || "-")}
+        </p>
+
+        <p><strong>What did you like?</strong><br>
+          ${escapeHtml(i.what_liked || "-")}
+        </p>
+
+        <p><strong>What was confusing or difficult?</strong><br>
+          ${escapeHtml(i.what_confusing || "-")}
+        </p>
+
+        <p><strong>What would you improve?</strong><br>
+          ${escapeHtml(i.what_improve || "-")}
+        </p>
+
+        <p><strong>Would you use Boatatory?</strong><br>
+          ${escapeHtml(i.would_use || "-")}
+        </p>
+
+      </div>
+    `).join("")
+    || `<p class="muted">No interview feedback yet.</p>`
+  }
+</div>
     </main>
   `;
 
