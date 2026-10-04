@@ -638,6 +638,7 @@ async function dashboard(user) {
   <div class="logo">Boat<span>atory</span></div>
   <div>
     <button class="btn secondary" id="feedback-btn">Feedback</button>
+    <button class="btn secondary" id="interview-btn">Interview</button>
     <button class="btn secondary" id="logout">Sign out</button>
   </div>
 </header>
@@ -698,7 +699,9 @@ async function dashboard(user) {
   }; document.querySelector("#feedback-btn")?.addEventListener("click",async()=>{
   await feedbackScreen(user);
 });
-
+document.querySelector("#interview-btn")?.addEventListener("click",async()=>{
+  await interviewScreen(user);
+});
   document.querySelector("#new-vessel")?.addEventListener("click",()=>vesselForm());
   document.querySelector("#empty-add")?.addEventListener("click",()=>vesselForm());
 
