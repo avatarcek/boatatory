@@ -530,10 +530,12 @@ async function dashboard(user) {
 
   app.innerHTML=`
     <header class="topbar">
-      <div class="logo">Boat<span>atory</span></div>
-      <button class="btn secondary"
-   <button class="btn secondary" id="feedback-btn">Feedback</button> id="logout">Sign out</button>
-    </header>
+  <div class="logo">Boat<span>atory</span></div>
+  <div>
+    <button class="btn secondary" id="feedback-btn">Feedback</button>
+    <button class="btn secondary" id="logout">Sign out</button>
+  </div>
+</header>
 
     <main class="container">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;margin-bottom:20px">
