@@ -531,7 +531,8 @@ async function dashboard(user) {
   app.innerHTML=`
     <header class="topbar">
       <div class="logo">Boat<span>atory</span></div>
-      <button class="btn secondary" id="logout">Sign out</button>
+      <button class="btn secondary"
+   <button class="btn secondary" id="feedback-btn">Feedback</button> id="logout">Sign out</button>
     </header>
 
     <main class="container">
@@ -587,7 +588,9 @@ async function dashboard(user) {
   document.querySelector("#logout").onclick=async()=>{
     await supabase.auth.signOut();
     await router();
-  };
+  }; document.querySelector("#feedback-btn")?.addEventListener("click",async()=>{
+  await feedbackScreen(user);
+});
 
   document.querySelector("#new-vessel")?.addEventListener("click",()=>vesselForm());
   document.querySelector("#empty-add")?.addEventListener("click",()=>vesselForm());
