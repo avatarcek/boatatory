@@ -219,6 +219,102 @@ async function ensureProfile(user) {
       full_name:user.user_metadata?.full_name || ""
     });
   }
+} async function onboardingScreen(user){
+  const {data:profile,error}=await supabase
+    .from("profiles")
+    .select("onboarding_reason")
+    .eq("id",user.id)
+    .single();
+
+  if(error || profile?.onboarding_reason){
+    return false;
+  }
+
+  app.innerHTML=`
+    <main class="container">
+      <div class="card" style="max-width:650px;margin:60px auto">
+        <div class="badge">WELCOME TO BOATATORY</div>
+
+        <h1>What brings you to Boatatory?</h1>
+
+        <p class="muted">
+          This helps us understand what you want to use Boatatory for.
+        </p>
+
+        <form id="onboarding-form" style="margin-top:28px">
+
+          <label style="display:block;margin:14px 0">
+            <input type="radio" name="reason" value="boat_history" required>
+            Keep a history of my boat
+          </label>
+
+          <label style="display:block;margin:14px 0">
+            <input type="radio" name="reason" value="maintenance">
+            Track maintenance and service
+          </label>
+
+          <label style="display:block;margin:14px 0">
+            <input type="radio" name="reason" value="sell_boat">
+            Prepare my boat for sale
+          </label>
+
+          <label style="display:block;margin:14px 0">
+            <input type="radio" name="reason" value="prove_history">
+            Prove my boat's history
+          </label>
+
+          <label style="display:block;margin:14px 0">
+            <input type="radio" name="reason" value="exploring">
+            I'm just exploring
+          </label>
+
+          <label style="display:block;margin:14px 0">
+            <input type="radio" name="reason" value="other">
+            Other
+          </label>
+
+          <button class="btn" type="submit" style="margin-top:20px">
+            Continue
+          </button>
+
+        </form>
+
+        <div id="onboarding-message" style="margin-top:18px"></div>
+      </div>
+    </main>
+  `;
+
+  document.querySelector("#onboarding-form").onsubmit=async(e)=>{
+    e.preventDefault();
+
+    const reason=document.querySelector(
+      'input[name="reason"]:checked'
+    )?.value;
+
+    if(!reason){
+      return;
+    }
+
+    const {error:updateError}=await supabase
+      .from("profiles")
+      .update({
+        onboarding_reason:reason
+      })
+      .eq("id",user.id);
+
+    if(updateError){
+      showError(updateError.message);
+      return;
+    }
+
+    await trackEvent("onboarding_reason_selected",{
+      reason
+    });
+
+    await router();
+  };
+
+  return true;
 }
 
 function authScreen() {
@@ -1226,7 +1322,7 @@ if(path.startsWith("/v/")){
   await ensureProfile(user);
   const {data:profile}=await supabase
   .from("profiles")
-  .select("role")
+  .select("role,onboarding_reason")
   .eq("id",user.id)
   .single();
 
