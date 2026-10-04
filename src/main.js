@@ -644,7 +644,12 @@ async function adminDashboard(user){
     .from("user_events")
     .select("id,user_id,event_name,metadata,created_at")
     .order("created_at",{ascending:false})
-    .limit(20)
+.limit(20),
+supabase
+  .from("feedback")
+  .select("id,user_id,message,created_at")
+  .order("created_at",{ascending:false})
+  .limit(20)
 ]);
 
   app.innerHTML=`
