@@ -880,7 +880,7 @@ async function adminUserDetail(adminUser,userId){
   document.querySelector("#user-detail-back").onclick=()=>{
     adminDashboard(adminUser);
   };
-} function vesselForm(existing=null) {
+} } function vesselForm(existing=null) {
   app.innerHTML=`
     <header class="topbar">
       <div class="logo">Boat<span>atory</span></div>
