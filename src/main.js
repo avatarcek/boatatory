@@ -749,7 +749,11 @@ supabase
 </div>  </main>
   `;
 
-  document.querySelector("#admin-back").onclick=()=>dashboard(user);
+  document.querySelectorAll(".admin-user-row").forEach(row=>{
+  row.onclick=()=>adminUserDetail(user,row.dataset.userId);
+});
+
+document.querySelector("#admin-back").onclick=()=>dashboard(user);
 async function adminUserDetail(adminUser,userId){
   const {data:profile}=await supabase
     .from("profiles")
