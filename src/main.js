@@ -316,7 +316,108 @@ async function ensureProfile(user) {
 
   return true;
 }
-async function feedbackScreen(user){
+async function interviewScreen(user){
+  app.innerHTML=`
+    <main class="container">
+      <div class="card" style="max-width:650px;margin:60px auto">
+
+        <div class="badge">BOATATORY INTERVIEW</div>
+
+        <h1>Help us improve Boatatory</h1>
+
+        <button class="btn secondary" id="interview-back" type="button" style="margin:16px 0">
+          ← Back to dashboard
+        </button>
+
+        <p class="muted">
+          Your answers help us understand what boat owners actually need.
+        </p>
+
+        <form id="interview-form" style="margin-top:28px">
+
+          <label>
+            What were you trying to do?
+            <textarea id="interview-trying" required
+              placeholder="For example: I wanted to keep track of my boat maintenance..."
+              style="width:100%;min-height:90px;margin-top:8px"></textarea>
+          </label>
+
+          <label style="display:block;margin-top:20px">
+            What did you like?
+            <textarea id="interview-liked"
+              placeholder="What felt useful or easy?"
+              style="width:100%;min-height:90px;margin-top:8px"></textarea>
+          </label>
+
+          <label style="display:block;margin-top:20px">
+            What was confusing or difficult?
+            <textarea id="interview-confusing"
+              placeholder="Was anything unclear or difficult to use?"
+              style="width:100%;min-height:90px;margin-top:8px"></textarea>
+          </label>
+
+          <label style="display:block;margin-top:20px">
+            What would you improve?
+            <textarea id="interview-improve"
+              placeholder="What would make Boatatory better for you?"
+              style="width:100%;min-height:90px;margin-top:8px"></textarea>
+          </label>
+
+          <label style="display:block;margin-top:20px">
+            Would you use Boatatory for your own boat?
+            <select id="interview-use" required
+              style="width:100%;margin-top:8px">
+              <option value="">Select one</option>
+              <option value="yes">Yes</option>
+              <option value="maybe">Maybe</option>
+              <option value="no">No</option>
+            </select>
+          </label>
+
+          <div id="interview-message" style="margin-top:16px"></div>
+
+          <button class="btn" type="submit" style="margin-top:20px">
+            Send interview
+          </button>
+
+        </form>
+      </div>
+    </main>
+  `;
+
+  document.querySelector("#interview-back").onclick=()=>{
+    dashboard(user);
+  };
+
+  document.querySelector("#interview-form").onsubmit=async(e)=>{
+    e.preventDefault();
+
+    const {error}=await supabase
+      .from("interview_feedback")
+      .insert({
+        user_id:user.id,
+        what_trying_to_do:document.querySelector("#interview-trying").value,
+        what_liked:document.querySelector("#interview-liked").value,
+        what_confusing:document.querySelector("#interview-confusing").value,
+        what_improve:document.querySelector("#interview-improve").value,
+        would_use:document.querySelector("#interview-use").value
+      });
+
+    if(error){
+      showError(error.message);
+      return;
+    }
+
+    await trackEvent("interview_feedback_submitted");
+
+    document.querySelector("#interview-message").innerHTML=
+      `<p class="success">Thank you! Your feedback has been submitted.</p>`;
+
+    document.querySelector("#interview-form").reset();
+  };
+}
+
+async function feedbackScreen(user){ 
 
   app.innerHTML=`
     <main class="container">
