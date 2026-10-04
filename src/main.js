@@ -316,7 +316,80 @@ async function ensureProfile(user) {
 
   return true;
 }
+async function feedbackScreen(user){
 
+  app.innerHTML=`
+    <main class="container">
+      <div class="card" style="max-width:650px;margin:60px auto">
+
+        <div class="badge">BOATATORY FEEDBACK</div>
+
+        <h1>Tell us what you think</h1>
+
+        <p class="muted">
+          Your feedback helps us improve Boatatory.
+        </p>
+
+        <form id="feedback-form" style="margin-top:28px">
+
+          <textarea
+            id="feedback-message"
+            required
+            placeholder="What do you like? What should we improve?"
+            style="width:100%;min-height:160px;padding:14px;border-radius:10px;resize:vertical"
+          ></textarea>
+
+          <button
+            class="btn"
+            type="submit"
+            style="margin-top:16px"
+          >
+            Send feedback
+          </button>
+
+        </form>
+
+        <div id="feedback-message-status" style="margin-top:18px"></div>
+
+      </div>
+    </main>
+  `;
+
+  document.querySelector("#feedback-form").onsubmit=async(e)=>{
+    e.preventDefault();
+
+    const message=document
+      .querySelector("#feedback-message")
+      .value
+      .trim();
+
+    if(!message){
+      return;
+    }
+
+    const {error}=await supabase
+      .from("feedback")
+      .insert({
+        user_id:user.id,
+        message:message
+      });
+
+    if(error){
+      showError(error.message);
+      return;
+    }
+
+    await trackEvent("feedback_submitted");
+
+    document.querySelector("#feedback-form").style.display="none";
+
+    document.querySelector("#feedback-message-status").innerHTML=`
+      <strong>✓ Thank you!</strong>
+      <br><br>
+      Your feedback has been received.
+    `;
+  };
+}
 function authScreen() {
   app.innerHTML = `
     <div class="hero">
