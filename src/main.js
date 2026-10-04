@@ -325,7 +325,9 @@ async function feedbackScreen(user){
         <div class="badge">BOATATORY FEEDBACK</div>
 
         <h1>Tell us what you think</h1>
-
+<button class="btn secondary" id="feedback-back" type="button" style="margin:16px 0">
+  ← Back to dashboard
+</button>
         <p class="muted">
           Your feedback helps us improve Boatatory.
         </p>
@@ -354,7 +356,9 @@ async function feedbackScreen(user){
       </div>
     </main>
   `;
-
+document.querySelector("#feedback-back").onclick=async()=>{
+  await dashboard(user);
+};
   document.querySelector("#feedback-form").onsubmit=async(e)=>{
     e.preventDefault();
 
